@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LP Farm Monitor</title>
+    <title>LP Farm Monitor — Strategy Comparison</title>
     <style>
         :root {
             --bg: #0a0a0f;
@@ -16,6 +16,7 @@
             --blue: #4da6ff;
             --purple: #a855f7;
             --yellow: #fbbf24;
+            --orange: #f97316;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -29,14 +30,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
         }
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
+        .header h1 { font-size: 1.4rem; font-weight: 600; }
         .header .status {
             display: flex;
             align-items: center;
@@ -44,129 +42,160 @@
             font-size: 0.85rem;
             color: var(--muted);
         }
-        .header .status .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--green);
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--muted);
             animation: pulse 2s infinite;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
         }
-        .stats-grid {
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.9rem;
+            color: var(--muted);
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--text); background: var(--card); }
+        .tab.active {
+            color: var(--text);
+            background: var(--card);
+            border-color: var(--border);
+            font-weight: 600;
+        }
+        .tab .tab-pnl {
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+        .tab .tab-pnl.green { color: var(--green); }
+        .tab .tab-pnl.red { color: var(--red); }
+
+        /* Comparison bar */
+        .compare-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .compare-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            position: relative;
+        }
+        .compare-card.winner { border-color: var(--green); }
+        .compare-card .label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .compare-card .value { font-size: 1.3rem; font-weight: 700; }
+        .compare-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+        .crown { position: absolute; top: 8px; right: 10px; font-size: 0.7rem; color: var(--green); }
+
+        /* Strategy panel */
+        .strategy-panel { display: none; }
+        .strategy-panel.active { display: block; }
+
+        /* Stats grid */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
         }
         .stat-card {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 14px;
         }
-        .stat-card .label {
-            font-size: 0.75rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-        .stat-card .value {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-        .stat-card .change {
-            font-size: 0.8rem;
-            margin-top: 4px;
-        }
-        .positive { color: var(--green); }
-        .negative { color: var(--red); }
-        .positions-table {
+        .stat-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; }
+        .stat-value { font-size: 1.05rem; font-weight: 600; }
+
+        /* Positions */
+        .positions { display: flex; flex-direction: column; gap: 10px; }
+        .position-card {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 24px;
+            border-radius: 8px;
+            padding: 14px;
         }
-        .positions-table .table-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
+        .position-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
         }
-        .positions-table .table-header h2 {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-        .positions-table .table-header .badge {
+        .pool-name { font-size: 1rem; font-weight: 600; }
+        .badge {
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            border-radius: 4px;
             background: var(--border);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
             color: var(--muted);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .badge-meridian { background: #1a1a2e; color: var(--blue); }
+        .badge-custom { background: #1a2e1a; color: var(--green); }
+        .badge-open { background: #1a2e1a; color: var(--green); }
+        .badge-closed { background: #2e1a1a; color: var(--red); }
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
         }
-        th {
-            text-align: left;
-            padding: 12px 20px;
-            font-size: 0.75rem;
+        .metric-label { font-size: 0.65rem; color: var(--muted); display: block; }
+        .metric-value { font-size: 0.85rem; font-weight: 500; }
+
+        /* Closed positions */
+        .closed-section { margin-top: 20px; }
+        .closed-section h3 {
+            font-size: 0.9rem;
             color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
         }
-        td {
-            padding: 14px 20px;
-            font-size: 0.85rem;
-            border-bottom: 1px solid var(--border);
-        }
-        tr:last-child td { border-bottom: none; }
-        tr:hover { background: rgba(255,255,255,0.02); }
-        .chain-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .chain-solana { background: rgba(153, 69, 255, 0.15); color: #b87fff; }
-        .chain-base { background: rgba(0, 82, 255, 0.15); color: #4da6ff; }
-        .chain-arbitrum { background: rgba(40, 160, 240, 0.15); color: #28a0f0; }
-        .range-bar {
-            width: 80px;
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            position: relative;
-            display: inline-block;
-        }
-        .range-bar .fill {
-            height: 100%;
-            border-radius: 3px;
-            position: absolute;
-            left: 0;
-        }
-        .range-in { background: var(--green); }
-        .range-out { background: var(--red); }
-        .footer {
+
+        .green { color: var(--green); }
+        .red { color: var(--red); }
+        .yellow { color: var(--yellow); }
+        .blue { color: var(--blue); }
+
+        #footer {
+            margin-top: 24px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 0.7rem;
+            color: var(--muted);
             text-align: center;
-            padding: 20px;
-            color: var(--muted);
-            font-size: 0.75rem;
         }
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            table { font-size: 0.75rem; }
-            td, th { padding: 10px 12px; }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .compare-bar { grid-template-columns: 1fr; }
+            .tabs { overflow-x: auto; }
+            .tab { padding: 8px 14px; font-size: 0.8rem; white-space: nowrap; }
         }
     </style>
 </head>
@@ -175,69 +204,17 @@
         <h1>LP Farm Monitor</h1>
         <div class="status">
             <div class="dot"></div>
-            <span id="last-update">Simulation Mode</span>
+            <span class="status-label">Connecting...</span>
         </div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="label">Total Value Locked</div>
-            <div class="value" id="tvl">$0.00</div>
-            <div class="change positive" id="tvl-change">+0%</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Total Fees Earned</div>
-            <div class="value" id="fees">$0.00</div>
-            <div class="change positive" id="fees-change">+$0 today</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Impermanent Loss</div>
-            <div class="value" id="il">0%</div>
-            <div class="change" id="il-change">vs HODL</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Net PnL</div>
-            <div class="value" id="pnl">$0.00</div>
-            <div class="change" id="pnl-change">All time</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Active Positions</div>
-            <div class="value" id="active-count">0</div>
-            <div class="change" id="in-range-count">0 in range</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">APR (Avg)</div>
-            <div class="value" id="apr">0%</div>
-            <div class="change" id="apr-change">24h rolling</div>
-        </div>
-    </div>
+    <div class="compare-bar" id="compare-bar"></div>
 
-    <div class="positions-table">
-        <div class="table-header">
-            <h2>Positions</h2>
-            <span class="badge" id="position-badge">0 positions</span>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Pool</th>
-                    <th>Chain</th>
-                    <th>Value</th>
-                    <th>Fees</th>
-                    <th>IL</th>
-                    <th>APR</th>
-                    <th>Range</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="positions-body">
-            </tbody>
-        </table>
-    </div>
+    <div class="tabs" id="tabs"></div>
 
-    <div class="footer">
-        LP Farm Monitor v1.0 — Simulation Data — Updated <span id="update-time">-</span>
-    </div>
+    <div id="panels"></div>
+
+    <div id="footer"></div>
 
     <script src="app.js"></script>
 </body>
