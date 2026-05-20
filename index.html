@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP Farm Monitor</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --muted: #888;
+            --green: #00d68f;
+            --red: #ff4d6a;
+            --blue: #4da6ff;
+            --purple: #a855f7;
+            --yellow: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .header .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .stat-card .change {
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        .positive { color: var(--green); }
+        .negative { color: var(--red); }
+        .positions-table {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .positions-table .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .positions-table .table-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .positions-table .table-header .badge {
+            background: var(--border);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 12px 20px;
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 14px 20px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        .chain-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .chain-solana { background: rgba(153, 69, 255, 0.15); color: #b87fff; }
+        .chain-base { background: rgba(0, 82, 255, 0.15); color: #4da6ff; }
+        .chain-arbitrum { background: rgba(40, 160, 240, 0.15); color: #28a0f0; }
+        .range-bar {
+            width: 80px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            position: relative;
+            display: inline-block;
+        }
+        .range-bar .fill {
+            height: 100%;
+            border-radius: 3px;
+            position: absolute;
+            left: 0;
+        }
+        .range-in { background: var(--green); }
+        .range-out { background: var(--red); }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 0.75rem;
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            table { font-size: 0.75rem; }
+            td, th { padding: 10px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>LP Farm Monitor</h1>
+        <div class="status">
+            <div class="dot"></div>
+            <span id="last-update">Simulation Mode</span>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">Total Value Locked</div>
+            <div class="value" id="tvl">$0.00</div>
+            <div class="change positive" id="tvl-change">+0%</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total Fees Earned</div>
+            <div class="value" id="fees">$0.00</div>
+            <div class="change positive" id="fees-change">+$0 today</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Impermanent Loss</div>
+            <div class="value" id="il">0%</div>
+            <div class="change" id="il-change">vs HODL</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Net PnL</div>
+            <div class="value" id="pnl">$0.00</div>
+            <div class="change" id="pnl-change">All time</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Active Positions</div>
+            <div class="value" id="active-count">0</div>
+            <div class="change" id="in-range-count">0 in range</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">APR (Avg)</div>
+            <div class="value" id="apr">0%</div>
+            <div class="change" id="apr-change">24h rolling</div>
+        </div>
+    </div>
+
+    <div class="positions-table">
+        <div class="table-header">
+            <h2>Positions</h2>
+            <span class="badge" id="position-badge">0 positions</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pool</th>
+                    <th>Chain</th>
+                    <th>Value</th>
+                    <th>Fees</th>
+                    <th>IL</th>
+                    <th>APR</th>
+                    <th>Range</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="positions-body">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        LP Farm Monitor v1.0 — Simulation Data — Updated <span id="update-time">-</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
